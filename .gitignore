@@ -11,6 +11,8 @@ env/
 
 checkpoints/
 checkpoints_multi/
+!checkpoints_multi/
+!checkpoints_multi/best_model_multi.pth
 dataset_v2/
 dataset_v2_random/
 offline_dataset_railgun/
@@ -22,6 +24,7 @@ visual_outputs/
 visual_outputs_rhcr/
 
 *.pth
+!checkpoints_multi/best_model_multi.pth
 *.pt
 *.ckpt
 *.zip

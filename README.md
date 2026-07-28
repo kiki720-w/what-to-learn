@@ -31,18 +31,29 @@ traffic pressure.
 - `docs/` - commands, results, project memory, TODOs, and paper narrative notes.
 - `results/priority_sweeps/` - compact CSV / Markdown sweep summaries.
 
+## Included Checkpoint
+
+The repository includes the default neural checkpoint used by the experiment
+scripts:
+
+```text
+checkpoints_multi/best_model_multi.pth
+```
+
+This checkpoint is about 39.5 MiB and stores the trained model state plus
+validation metadata. The model has about 3.44M parameters.
+
 ## Not Included
 
 Large generated assets are intentionally excluded from Git:
 
-- model checkpoints (`*.pth`, `checkpoints_multi/`)
+- extra model checkpoints (`latest_model_multi.pth`, other `*.pth` files)
 - generated datasets (`dataset_v2*`, `offline_dataset_railgun/`)
 - build outputs (`lacam_win/build/`)
 - temporary run logs and visualization folders
 
-The scripts default to `./checkpoints_multi/best_model_multi.pth` for neural
-inference, so restore or retrain that checkpoint locally before running neural
-experiments.
+The scripts default to the included `./checkpoints_multi/best_model_multi.pth`
+for neural inference.
 
 ## Useful Commands
 
