@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - 'lacam/**'
+      - 'tests/**'
+      - 'main.cpp'
+      - '.github/**'
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: false
+      - name: submodule setup for google test
+        uses: actions/checkout@v2
+        with:
+          repository: google/googletest
+          path: third_party/googletest
+      - name: submodule setup for argparse
+        uses: actions/checkout@v2
+        with:
+          repository: p-ranav/argparse
+          path: third_party/argparse
+      - name: build
+        run: cmake -B build && make -C build
+      - name: test
+        run: ./build/test_all
