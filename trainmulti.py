@@ -1,5 +1,6 @@
 import os
 import random
+import argparse
 from dataclasses import dataclass
 
 import torch
@@ -41,6 +42,48 @@ def set_seed(seed=42):
     random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Train MAPF_ResUNet with action and rolling-window heatmap supervision."
+    )
+    parser.add_argument("--train_dir", default=TrainConfig.TRAIN_DIR)
+    parser.add_argument("--val_dir", default=TrainConfig.VAL_DIR)
+    parser.add_argument("--save_dir", default=TrainConfig.SAVE_DIR)
+    parser.add_argument("--epochs", type=int, default=TrainConfig.NUM_EPOCHS)
+    parser.add_argument("--batch_size", type=int, default=TrainConfig.BATCH_SIZE)
+    parser.add_argument("--lr", type=float, default=TrainConfig.LEARNING_RATE)
+    parser.add_argument("--weight_decay", type=float, default=TrainConfig.WEIGHT_DECAY)
+    parser.add_argument("--heatmap_loss_weight", type=float, default=TrainConfig.HEATMAP_LOSS_WEIGHT)
+    parser.add_argument("--early_stop_patience", type=int, default=TrainConfig.EARLY_STOP_PATIENCE)
+    parser.add_argument("--label_mode", default=TrainConfig.LABEL_MODE)
+    parser.add_argument("--stay_keep_prob", type=float, default=TrainConfig.STAY_KEEP_PROB)
+    parser.add_argument("--num_workers", type=int, default=TrainConfig.NUM_WORKERS)
+    parser.add_argument("--seed", type=int, default=TrainConfig.SEED)
+    parser.add_argument("--device", default=TrainConfig.DEVICE)
+    parser.add_argument("--no_amp", action="store_true")
+    return parser.parse_args()
+
+
+def config_from_args(args) -> TrainConfig:
+    cfg = TrainConfig()
+    cfg.TRAIN_DIR = args.train_dir
+    cfg.VAL_DIR = args.val_dir
+    cfg.SAVE_DIR = args.save_dir
+    cfg.NUM_EPOCHS = args.epochs
+    cfg.BATCH_SIZE = args.batch_size
+    cfg.LEARNING_RATE = args.lr
+    cfg.WEIGHT_DECAY = args.weight_decay
+    cfg.HEATMAP_LOSS_WEIGHT = args.heatmap_loss_weight
+    cfg.EARLY_STOP_PATIENCE = args.early_stop_patience
+    cfg.LABEL_MODE = args.label_mode
+    cfg.STAY_KEEP_PROB = args.stay_keep_prob
+    cfg.NUM_WORKERS = args.num_workers
+    cfg.SEED = args.seed
+    cfg.DEVICE = args.device
+    cfg.USE_AMP = not args.no_amp
+    return cfg
 
 
 def compute_valid_accuracy(logits, labels, ignore_index=-1):
@@ -177,8 +220,9 @@ def validate_one_epoch(model, loader, criterion_action, criterion_heatmap, devic
     )
 
 
-def train():
-    cfg = TrainConfig()
+def train(cfg=None):
+    if cfg is None:
+        cfg = TrainConfig()
     set_seed(cfg.SEED)
 
     device = torch.device(cfg.DEVICE)
@@ -339,4 +383,4 @@ def train():
 
 
 if __name__ == "__main__":
-    train()
+    train(config_from_args(parse_args()))

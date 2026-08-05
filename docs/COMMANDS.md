@@ -151,6 +151,43 @@ results/priority_sweeps/pibt_agent_sweep.csv
 results/priority_sweeps/pibt_agent_sweep.md
 ```
 
+## Mixed-Map Training For Cross-Map Generalization
+
+Use this after observing weak room / maze / warehouse performance from the
+random-obstacle-only checkpoint. It creates a separate dataset and checkpoint
+directory so the original `dataset_v2_random` and `checkpoints_multi` baseline
+remain untouched.
+
+Generate mixed-map LaCAM expert data:
+
+```powershell
+D:\soft\Python39\python.exe .\generate_v2_random.py --save_dir .\dataset_v2_mixed --map_types random_obstacle,room,maze_like,warehouse --map_weights 1,1,1,1 --num_train 5000 --num_val 500 --num_test 500 --agents 16 --lacam_time_limit_sec 20 --subprocess_timeout_sec 60
+```
+
+Short smoke version:
+
+```powershell
+D:\soft\Python39\python.exe .\generate_v2_random.py --save_dir .\dataset_v2_mixed_smoke --map_types random_obstacle,room,maze_like,warehouse --map_weights 1,1,1,1 --num_train 4 --num_val 1 --num_test 1 --agents 8 --lacam_time_limit_sec 10 --subprocess_timeout_sec 30
+```
+
+Train a mixed-map checkpoint:
+
+```powershell
+D:\soft\Python39\python.exe .\trainmulti.py --train_dir .\dataset_v2_mixed\train --val_dir .\dataset_v2_mixed\val --save_dir .\checkpoints_mixed --epochs 30 --batch_size 16 --device cuda
+```
+
+Evaluate OOD maps with the mixed checkpoint by passing:
+
+```powershell
+--model_path .\checkpoints_mixed\best_model_multi.pth
+```
+
+Example:
+
+```powershell
+D:\soft\Python39\python.exe .\lifelong_neural_greedy_priority.py --map_type warehouse --agents 24 --steps 500 --seeds 1,2,3,4,5 --device cuda --model_path .\checkpoints_mixed\best_model_multi.pth
+```
+
 ## True C++ LaCAM Pressure Hook
 
 Build the modified true LaCAM executable:

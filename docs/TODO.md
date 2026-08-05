@@ -40,6 +40,7 @@ For rule-based lifelong MAPF planners, learning execution-level priority is the 
 
 4. Strengthen cross-algorithm validation:
    - Treat algorithmic breadth as a main paper requirement, following teacher feedback.
+   - Next: run the teacher-requested mixed-map training experiment. Generate `dataset_v2_mixed` with `random_obstacle,room,maze_like,warehouse`, train `checkpoints_mixed`, then compare the original random-obstacle-only checkpoint against the mixed-map checkpoint on room / maze_like / warehouse. This tests whether weak cross-map performance is caused by training-test distribution shift.
    - Run Greedy Priority Planner on more maps or densities.
    - Run PP / WHCA*-style planner on more maps or densities.
    - Consider adding another planner family if implementation cost is reasonable.

@@ -4,6 +4,7 @@ import glob
 import random
 import shutil
 import subprocess
+import argparse
 from collections import deque, Counter
 
 import torch
@@ -23,6 +24,12 @@ class DataConfig:
 
     SAVE_DIR = "./dataset_v2_random"
     TEMP_DIR = "./dataset_v2_random/temp"
+
+    # Dataset map distribution. The old generator is kept as
+    # "random_obstacle" for backward compatibility.
+    MAP_TYPES = ["random_obstacle"]
+    MAP_WEIGHTS = None
+    OBSTACLE_RATIO = 0.15
 
     WSL_LACAM_EXE = "/home/wlf/lacam/build/main"
 
@@ -78,8 +85,19 @@ def gaussian_smooth_heatmap(heatmap, sigma=1.0, kernel_size=5):
     return x.squeeze(0).squeeze(0)
 
 
-# 3. 随机地图生成
-def generate_random_map_and_agents(cfg):
+def parse_csv_list(text):
+    return [x.strip() for x in text.split(",") if x.strip()]
+
+
+def apply_boundary_obstacles(obs):
+    obs[0, :] = 1.0
+    obs[-1, :] = 1.0
+    obs[:, 0] = 1.0
+    obs[:, -1] = 1.0
+    return obs
+
+
+def generate_random_obstacle_training_map(cfg):
     obs = torch.zeros((cfg.H, cfg.W), dtype=torch.float32)
 
     for y in range(4, cfg.H - 4, 3):
@@ -92,10 +110,116 @@ def generate_random_map_and_agents(cfg):
             if obs[y, x] == 1.0 and random.random() < 0.25:
                 obs[y, x] = 0.0
 
-    obs[0, :] = 1.0
-    obs[-1, :] = 1.0
-    obs[:, 0] = 1.0
-    obs[:, -1] = 1.0
+    return apply_boundary_obstacles(obs)
+
+
+def generate_room_training_map(cfg):
+    obs = torch.zeros((cfg.H, cfg.W), dtype=torch.float32)
+
+    # Cross walls split the grid into rooms.
+    mid_y = cfg.H // 2
+    mid_x = cfg.W // 2
+    obs[mid_y, 1:cfg.W - 1] = 1.0
+    obs[1:cfg.H - 1, mid_x] = 1.0
+
+    # Four doors create bottleneck traffic between rooms.
+    doors = [
+        (mid_y, cfg.W // 4),
+        (mid_y, 3 * cfg.W // 4),
+        (cfg.H // 4, mid_x),
+        (3 * cfg.H // 4, mid_x),
+    ]
+    for y, x in doors:
+        obs[y, x] = 0.0
+
+    # Optional small furniture-like obstacles away from doors.
+    rng = random.Random(random.randint(0, 10**9))
+    for y in range(3, cfg.H - 3):
+        for x in range(3, cfg.W - 3):
+            if obs[y, x] < 0.5 and rng.random() < 0.015:
+                obs[y, x] = 1.0
+
+    return apply_boundary_obstacles(obs)
+
+
+def generate_warehouse_training_map(cfg):
+    obs = torch.zeros((cfg.H, cfg.W), dtype=torch.float32)
+
+    # Shelf blocks with cross aisles. This matches the test-time topology more
+    # closely than random barriers.
+    for x in range(4, cfg.W - 4, 6):
+        for y in range(3, cfg.H - 3):
+            if y % 8 not in [0, 1]:
+                obs[y, x] = 1.0
+                if x + 1 < cfg.W - 1:
+                    obs[y, x + 1] = 1.0
+
+    return apply_boundary_obstacles(obs)
+
+
+def generate_maze_like_training_map(cfg):
+    obs = torch.ones((cfg.H, cfg.W), dtype=torch.float32)
+
+    # Recursive-backtracker maze on odd cells, then open a few extra connectors
+    # to avoid making LaCAM expert generation unnecessarily brittle.
+    start = (1, 1)
+    obs[start] = 0.0
+    stack = [start]
+    visited = {start}
+    rng = random.Random(random.randint(0, 10**9))
+
+    def neighbors(cell):
+        y, x = cell
+        out = []
+        for dy, dx in [(-2, 0), (2, 0), (0, -2), (0, 2)]:
+            ny, nx = y + dy, x + dx
+            if 1 <= ny < cfg.H - 1 and 1 <= nx < cfg.W - 1:
+                out.append((ny, nx, y + dy // 2, x + dx // 2))
+        rng.shuffle(out)
+        return out
+
+    while stack:
+        cur = stack[-1]
+        choices = [n for n in neighbors(cur) if (n[0], n[1]) not in visited]
+        if not choices:
+            stack.pop()
+            continue
+        ny, nx, wy, wx = choices[0]
+        obs[wy, wx] = 0.0
+        obs[ny, nx] = 0.0
+        visited.add((ny, nx))
+        stack.append((ny, nx))
+
+    for y in range(1, cfg.H - 1):
+        for x in range(1, cfg.W - 1):
+            if obs[y, x] >= 0.5 and rng.random() < 0.08:
+                obs[y, x] = 0.0
+
+    return apply_boundary_obstacles(obs)
+
+
+def choose_map_type(cfg):
+    if cfg.MAP_WEIGHTS is None:
+        return random.choice(cfg.MAP_TYPES)
+    return random.choices(cfg.MAP_TYPES, weights=cfg.MAP_WEIGHTS, k=1)[0]
+
+
+def generate_map_by_type(cfg, map_type):
+    if map_type == "random_obstacle":
+        return generate_random_obstacle_training_map(cfg)
+    if map_type == "room":
+        return generate_room_training_map(cfg)
+    if map_type == "warehouse":
+        return generate_warehouse_training_map(cfg)
+    if map_type in {"maze", "maze_like"}:
+        return generate_maze_like_training_map(cfg)
+    raise ValueError(f"Unknown training map type: {map_type}")
+
+
+# 3. 多地图训练样本生成
+def generate_map_and_agents(cfg):
+    map_type = choose_map_type(cfg)
+    obs = generate_map_by_type(cfg, map_type)
 
     free_cells = [
         (y, x)
@@ -105,7 +229,7 @@ def generate_random_map_and_agents(cfg):
     ]
 
     if len(free_cells) < cfg.N_AGENTS * 3:
-        return None, None
+        return None, None, map_type
 
     random.shuffle(free_cells)
 
@@ -121,7 +245,7 @@ def generate_random_map_and_agents(cfg):
             "gx": goals[i][1],
         })
 
-    return obs, agents
+    return obs, agents, map_type
 
 
 # 4. MovingAI 格式导出
@@ -386,7 +510,7 @@ def get_action_index(cy, cx, ny, nx):
 
 
 # 10. 构造 9 通道 + RHCR rolling-window heatmap 多任务样本
-def build_training_sample(obs, agents, expert_paths, cfg):
+def build_training_sample(obs, agents, expert_paths, cfg, map_type=None):
     H, W = obs.shape
 
     max_len = max(len(p) for p in expert_paths)
@@ -521,6 +645,7 @@ def build_training_sample(obs, agents, expert_paths, cfg):
         "heatmap_target": heatmap_target,
         "window_size": cfg.WINDOW_SIZE,
         "replan_period": cfg.REPLAN_PERIOD,
+        "map_type": map_type or "unknown",
     }
 
 
@@ -536,6 +661,7 @@ def generate_split_data(mode, num_samples):
     success_count = 0
     fail_count = 0
     attempt_count = 0
+    map_counter = Counter()
     max_attempts = num_samples * cfg.MAX_TOTAL_ATTEMPTS_MULTIPLIER
 
     pbar = tqdm(total=num_samples, desc=f"[{mode.upper()}]", unit="sample")
@@ -543,7 +669,7 @@ def generate_split_data(mode, num_samples):
     while success_count < num_samples and attempt_count < max_attempts:
         attempt_count += 1
 
-        obs, agents = generate_random_map_and_agents(cfg)
+        obs, agents, map_type = generate_map_and_agents(cfg)
         if obs is None:
             fail_count += 1
             continue
@@ -565,7 +691,7 @@ def generate_split_data(mode, num_samples):
                 )
             continue
 
-        sample = build_training_sample(obs, agents, expert_paths, cfg)
+        sample = build_training_sample(obs, agents, expert_paths, cfg, map_type=map_type)
         if sample is None:
             fail_count += 1
             continue
@@ -579,6 +705,7 @@ def generate_split_data(mode, num_samples):
         torch.save(sample, out_file)
 
         success_count += 1
+        map_counter[map_type] += 1
         pbar.update(1)
 
     pbar.close()
@@ -587,6 +714,7 @@ def generate_split_data(mode, num_samples):
     print(f"success_count = {success_count}")
     print(f"fail_count    = {fail_count}")
     print(f"attempt_count = {attempt_count}")
+    print(f"map_types     = {dict(map_counter)}")
 
     if success_count < num_samples:
         print(
@@ -612,6 +740,7 @@ def inspect_dataset(root="./dataset_v2_random"):
         heatmap_nonzero = []
         window_counter = Counter()
         replan_counter = Counter()
+        map_counter = Counter()
 
         for f in files:
             data = torch.load(f, map_location="cpu", weights_only=False)
@@ -634,12 +763,16 @@ def inspect_dataset(root="./dataset_v2_random"):
             if "replan_period" in data:
                 replan_counter[int(data["replan_period"])] += 1
 
+            if "map_type" in data:
+                map_counter[str(data["map_type"])] += 1
+
         print(f"\n[{split}]")
         print(f"samples: {len(files)}")
         print(f"channels: {channel_counter}")
         print(f"labels: {label_counter}")
         print(f"window_size: {window_counter}")
         print(f"replan_period: {replan_counter}")
+        print(f"map_type: {map_counter}")
 
         if heatmap_max:
             print(f"heatmap min range: {min(heatmap_min):.4f} ~ {max(heatmap_min):.4f}")
@@ -650,14 +783,70 @@ def inspect_dataset(root="./dataset_v2_random"):
             print("heatmap_target missing")
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Generate LaCAM expert dataset for random-only or mixed-map training."
+    )
+    parser.add_argument("--save_dir", default=DataConfig.SAVE_DIR)
+    parser.add_argument("--temp_dir", default=None)
+    parser.add_argument("--map_types", default=",".join(DataConfig.MAP_TYPES))
+    parser.add_argument(
+        "--map_weights",
+        default=None,
+        help="Optional comma-separated weights matching --map_types.",
+    )
+    parser.add_argument("--num_train", type=int, default=DataConfig.NUM_TRAIN)
+    parser.add_argument("--num_val", type=int, default=DataConfig.NUM_VAL)
+    parser.add_argument("--num_test", type=int, default=DataConfig.NUM_TEST)
+    parser.add_argument("--agents", type=int, default=DataConfig.N_AGENTS)
+    parser.add_argument("--height", type=int, default=DataConfig.H)
+    parser.add_argument("--width", type=int, default=DataConfig.W)
+    parser.add_argument("--wsl_lacam_exe", default=DataConfig.WSL_LACAM_EXE)
+    parser.add_argument("--lacam_time_limit_sec", type=int, default=DataConfig.LACAM_TIME_LIMIT_SEC)
+    parser.add_argument("--subprocess_timeout_sec", type=int, default=DataConfig.SUBPROCESS_TIMEOUT_SEC)
+    parser.add_argument("--window_size", type=int, default=DataConfig.WINDOW_SIZE)
+    parser.add_argument("--replan_period", type=int, default=DataConfig.REPLAN_PERIOD)
+    parser.add_argument("--no_reset_dataset", action="store_true")
+    return parser.parse_args()
+
+
+def apply_args_to_config(args):
+    DataConfig.SAVE_DIR = args.save_dir
+    DataConfig.TEMP_DIR = args.temp_dir or os.path.join(args.save_dir, "temp")
+    DataConfig.MAP_TYPES = parse_csv_list(args.map_types)
+    if args.map_weights:
+        weights = [float(x) for x in parse_csv_list(args.map_weights)]
+        if len(weights) != len(DataConfig.MAP_TYPES):
+            raise ValueError("--map_weights length must match --map_types")
+        DataConfig.MAP_WEIGHTS = weights
+    else:
+        DataConfig.MAP_WEIGHTS = None
+    DataConfig.NUM_TRAIN = args.num_train
+    DataConfig.NUM_VAL = args.num_val
+    DataConfig.NUM_TEST = args.num_test
+    DataConfig.N_AGENTS = args.agents
+    DataConfig.H = args.height
+    DataConfig.W = args.width
+    DataConfig.WSL_LACAM_EXE = args.wsl_lacam_exe
+    DataConfig.LACAM_TIME_LIMIT_SEC = args.lacam_time_limit_sec
+    DataConfig.SUBPROCESS_TIMEOUT_SEC = args.subprocess_timeout_sec
+    DataConfig.WINDOW_SIZE = args.window_size
+    DataConfig.REPLAN_PERIOD = args.replan_period
+    DataConfig.RESET_DATASET = not args.no_reset_dataset
+
+
 # 13. 主函数
 if __name__ == "__main__":
+    args = parse_args()
+    apply_args_to_config(args)
     cfg = DataConfig()
 
     print("=== Starting RHCR-style Rolling-Window Dataset Generation via WSL LaCAM ===")
     print("WSL_LACAM_EXE =", cfg.WSL_LACAM_EXE)
     print("SAVE_DIR      =", os.path.abspath(cfg.SAVE_DIR))
     print("TEMP_DIR      =", os.path.abspath(cfg.TEMP_DIR))
+    print("MAP_TYPES     =", cfg.MAP_TYPES)
+    print("MAP_WEIGHTS   =", cfg.MAP_WEIGHTS)
     print("WINDOW_SIZE w =", cfg.WINDOW_SIZE)
     print("REPLAN_PERIOD h =", cfg.REPLAN_PERIOD)
     print("HEATMAP_SIGMA =", cfg.HEATMAP_SIGMA)

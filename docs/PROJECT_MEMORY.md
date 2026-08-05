@@ -160,6 +160,12 @@ Prefer throughput, collisions, wait/no-progress/stuck ratios, success ratios, no
 - Main checkpoint path in current scripts is `./checkpoints_multi/best_model_multi.pth`.
 - Main multi-seed scripts use seeds `[1, 2, 3, 4, 5]` and `500` simulation steps.
 - Current main priority-only PIBT setting keeps `USE_HEATMAP_REWARD = False`.
+- Cross-map generalization update: `generate_v2_random.py` now supports mixed-map
+  training data through `--map_types`, including `random_obstacle`, `room`,
+  `maze_like`, and `warehouse`. `trainmulti.py` now supports command-line
+  overrides for train / val / save directories. Use `dataset_v2_mixed` and
+  `checkpoints_mixed` for the teacher-requested mixed-map experiment, keeping
+  the original random-obstacle-only checkpoint as the baseline.
 
 ## Current Planner Parameters
 
