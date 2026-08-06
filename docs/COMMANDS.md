@@ -164,6 +164,9 @@ Generate mixed-map LaCAM expert data:
 D:\soft\Python39\python.exe .\generate_v2_random.py --save_dir .\dataset_v2_mixed --map_types random_obstacle,room,maze_like,warehouse --map_weights 1,1,1,1 --num_train 5000 --num_val 500 --num_test 500 --agents 16 --lacam_time_limit_sec 20 --subprocess_timeout_sec 60
 ```
 
+Status: completed for `dataset_v2_mixed` with `train=5000`, `val=500`,
+`test=500`. Do not rerun this unless intentionally replacing the dataset.
+
 Short smoke version:
 
 ```powershell

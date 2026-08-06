@@ -166,6 +166,15 @@ Prefer throughput, collisions, wait/no-progress/stuck ratios, success ratios, no
   overrides for train / val / save directories. Use `dataset_v2_mixed` and
   `checkpoints_mixed` for the teacher-requested mixed-map experiment, keeping
   the original random-obstacle-only checkpoint as the baseline.
+- Mixed-map data generation completed for `dataset_v2_mixed` using 16 agents,
+  `window_size=10`, `replan_period=5`, and WSL LaCAM expert labels. Counts are
+  `train=5000`, `val=500`, `test=500`. Training map-type counts are
+  `random_obstacle=1316`, `warehouse=1314`, `room=1276`, `maze_like=1094`;
+  validation counts are `warehouse=138`, `room=127`, `random_obstacle=125`,
+  `maze_like=110`; test counts are `random_obstacle=153`, `room=117`,
+  `warehouse=115`, `maze_like=115`. Next step is to train
+  `checkpoints_mixed/best_model_multi.pth` and compare it against
+  `checkpoints_multi/best_model_multi.pth` on room / maze_like / warehouse maps.
 
 ## Current Planner Parameters
 
