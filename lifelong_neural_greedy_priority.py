@@ -117,7 +117,7 @@ class LifelongGreedyConfig:
     TOTAL_STEPS: int = 500
 
     # Map types should match your lifelong_env.py:
-    # "open", "random_obstacle", "corridor", "warehouse", "maze_like"
+    # "open", "random_obstacle", "corridor", "room", "warehouse", "maze_like"
     MAP_TYPE: str = "corridor"
     OBSTACLE_RATIO: float = 0.15
 

@@ -17,7 +17,7 @@ class LifelongConfig:
 
     # New: map type
     # Options:
-    # "open", "random_obstacle", "corridor", "warehouse", "maze_like"
+    # "open", "random_obstacle", "corridor", "room", "warehouse", "maze_like"
     MAP_TYPE: str = "random_obstacle"
 
     # Used for random_obstacle / maze_like
@@ -73,6 +73,41 @@ def generate_corridor_map(H: int, W: int):
     obs[H - 1, :] = 0.0
     obs[:, 0] = 0.0
     obs[:, W - 1] = 0.0
+
+    return obs
+
+
+def generate_room_map(H: int, W: int, seed: int):
+    """
+    Four-room map with narrow doors between rooms.
+    Matches the mixed-map training distribution used for cross-map checks.
+    """
+    rng = random.Random(seed)
+    obs = torch.zeros((H, W), dtype=torch.float32)
+
+    mid_y = H // 2
+    mid_x = W // 2
+    obs[mid_y, 1:W - 1] = 1.0
+    obs[1:H - 1, mid_x] = 1.0
+
+    doors = [
+        (mid_y, W // 4),
+        (mid_y, 3 * W // 4),
+        (H // 4, mid_x),
+        (3 * H // 4, mid_x),
+    ]
+    for y, x in doors:
+        obs[y, x] = 0.0
+
+    for y in range(3, H - 3):
+        for x in range(3, W - 3):
+            if obs[y, x] < 0.5 and rng.random() < 0.015:
+                obs[y, x] = 1.0
+
+    obs[0, :] = 1.0
+    obs[H - 1, :] = 1.0
+    obs[:, 0] = 1.0
+    obs[:, W - 1] = 1.0
 
     return obs
 
@@ -156,6 +191,9 @@ def generate_map(cfg: LifelongConfig):
 
     if cfg.MAP_TYPE == "corridor":
         return generate_corridor_map(cfg.H, cfg.W)
+
+    if cfg.MAP_TYPE == "room":
+        return generate_room_map(cfg.H, cfg.W, cfg.SEED)
 
     if cfg.MAP_TYPE == "warehouse":
         return generate_warehouse_map(cfg.H, cfg.W)
