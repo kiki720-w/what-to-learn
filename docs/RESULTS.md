@@ -291,6 +291,32 @@ Interpretation:
 Warehouse is relatively open and Vanilla PIBT already has very low stuck ratio, so neural priority has limited room to improve throughput.
 ```
 
+Mixed-map checkpoint Greedy Priority Planner check:
+
+```text
+Script: lifelong_neural_greedy_priority.py
+Checkpoint: checkpoints_mixed/best_model_multi.pth
+Map: warehouse
+Agents: 24
+Steps: 500
+Seeds: 1,2,3,4,5
+```
+
+| Method | Throughput | Wait ratio | No-progress ratio | Stuck ratio | Collisions |
+|---|---:|---:|---:|---:|---:|
+| Vanilla Greedy | 1.0264 +/- 0.0207 | 0.0101 +/- 0.0012 | 0.0270 +/- 0.0026 | 0.0033 +/- 0.0007 | 0.00 +/- 0.00 |
+| Mixed-checkpoint Neural Greedy | 1.0112 +/- 0.0079 | 0.0097 +/- 0.0012 | 0.0253 +/- 0.0033 | 0.0024 +/- 0.0010 | 0.00 +/- 0.00 |
+
+Interpretation:
+
+```text
+The mixed-map checkpoint still does not improve warehouse throughput
+(-1.48% vs vanilla Greedy), but it reduces wait ratio, no-progress ratio, and
+stuck ratio. This reinforces warehouse as a boundary case: vanilla already
+performs strongly, so the learned priority signal mainly smooths congestion
+metrics instead of increasing completed tasks.
+```
+
 ### Corridor, 24 Agents
 
 Source:

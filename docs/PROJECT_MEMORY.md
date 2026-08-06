@@ -183,6 +183,15 @@ Prefer throughput, collisions, wait/no-progress/stuck ratios, success ratios, no
   and validation accuracy `0.9394`. Next evidence step is runtime evaluation:
   compare the original random-obstacle-only checkpoint against this mixed-map
   checkpoint on room / maze_like / warehouse maps.
+- First mixed-checkpoint OOD runtime check on `warehouse` with
+  `lifelong_neural_greedy_priority.py`, 24 agents, 500 steps, seeds 1-5:
+  Vanilla Greedy throughput `1.0264 +/- 0.0207`; mixed-checkpoint Neural
+  Greedy throughput `1.0112 +/- 0.0079` (-1.48%). Collisions stayed zero.
+  Neural reduced congestion metrics: wait ratio `0.0101 -> 0.0097`,
+  no-progress ratio `0.0270 -> 0.0253`, stuck ratio `0.0033 -> 0.0024`.
+  Interpretation: warehouse remains a boundary case where vanilla is already
+  strong; continue with room and maze_like before judging the distribution-shift
+  hypothesis.
 
 ## Current Planner Parameters
 
