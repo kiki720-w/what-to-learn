@@ -175,6 +175,14 @@ Prefer throughput, collisions, wait/no-progress/stuck ratios, success ratios, no
   `warehouse=115`, `maze_like=115`. Next step is to train
   `checkpoints_mixed/best_model_multi.pth` and compare it against
   `checkpoints_multi/best_model_multi.pth` on room / maze_like / warehouse maps.
+- Mixed-map checkpoint training completed and saved
+  `checkpoints_mixed/best_model_multi.pth` (about 41 MB). Training used
+  `dataset_v2_mixed/train`, validation used `dataset_v2_mixed/val`, batch size
+  16, CUDA, 30 max epochs, and early stopping patience 5. Early stopping
+  triggered at epoch 13. Best epoch was epoch 8 with validation loss `0.2231`
+  and validation accuracy `0.9394`. Next evidence step is runtime evaluation:
+  compare the original random-obstacle-only checkpoint against this mixed-map
+  checkpoint on room / maze_like / warehouse maps.
 
 ## Current Planner Parameters
 

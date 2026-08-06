@@ -179,6 +179,10 @@ Train a mixed-map checkpoint:
 D:\soft\Python39\python.exe .\trainmulti.py --train_dir .\dataset_v2_mixed\train --val_dir .\dataset_v2_mixed\val --save_dir .\checkpoints_mixed --epochs 30 --batch_size 16 --device cuda
 ```
 
+Status: completed. Best checkpoint saved at
+`checkpoints_mixed/best_model_multi.pth`; early stopping at epoch 13, best
+validation loss `0.2231`, best validation accuracy `0.9394`.
+
 Evaluate OOD maps with the mixed checkpoint by passing:
 
 ```powershell
