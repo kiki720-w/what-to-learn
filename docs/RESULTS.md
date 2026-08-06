@@ -317,6 +317,41 @@ performs strongly, so the learned priority signal mainly smooths congestion
 metrics instead of increasing completed tasks.
 ```
 
+### Room
+
+Mixed-map checkpoint Greedy Priority Planner check:
+
+```text
+Script: lifelong_neural_greedy_priority.py
+Checkpoint: checkpoints_mixed/best_model_multi.pth
+Map: room
+Agents: 24
+Steps: 500
+Seeds: 1,2,3,4,5
+```
+
+| Method | Throughput | Wait ratio | No-progress ratio | Stuck ratio | Collisions |
+|---|---:|---:|---:|---:|---:|
+| Vanilla Greedy | 0.1112 +/- 0.0384 | 0.7428 +/- 0.1134 | 0.8130 +/- 0.0566 | 0.7260 +/- 0.1275 | 0.00 +/- 0.00 |
+| Mixed-checkpoint Neural Greedy | 0.8736 +/- 0.1209 | 0.0798 +/- 0.0799 | 0.1119 +/- 0.0814 | 0.0615 +/- 0.0780 | 0.00 +/- 0.00 |
+
+Improvement:
+
+```text
++685.61% throughput.
+```
+
+Interpretation:
+
+```text
+Room maps create narrow door bottlenecks where vanilla Greedy often stalls.
+After mixed-map training includes room-like layouts, learned priority strongly
+improves completed tasks and sharply reduces wait / no-progress / stuck ratios.
+This is strong evidence that at least part of the earlier poor room performance
+was due to training-test distribution mismatch, not a failure of the priority
+injection idea itself.
+```
+
 ### Corridor, 24 Agents
 
 Source:

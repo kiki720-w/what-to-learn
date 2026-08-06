@@ -192,6 +192,15 @@ Prefer throughput, collisions, wait/no-progress/stuck ratios, success ratios, no
   Interpretation: warehouse remains a boundary case where vanilla is already
   strong; continue with room and maze_like before judging the distribution-shift
   hypothesis.
+- Mixed-checkpoint OOD runtime check on `room` with
+  `lifelong_neural_greedy_priority.py`, 24 agents, 500 steps, seeds 1-5:
+  Vanilla Greedy throughput `0.1112 +/- 0.0384`; mixed-checkpoint Neural
+  Greedy throughput `0.8736 +/- 0.1209` (+685.61%). Collisions stayed zero.
+  Congestion metrics improved sharply: wait ratio `0.7428 -> 0.0798`,
+  no-progress ratio `0.8130 -> 0.1119`, stuck ratio `0.7260 -> 0.0615`.
+  Interpretation: room strongly supports the training-distribution mismatch
+  explanation and shows that learned execution-level priority can optimize a
+  rule-based planner on bottleneck maps once those layouts appear in training.
 
 ## Current Planner Parameters
 
