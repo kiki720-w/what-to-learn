@@ -48,10 +48,22 @@ Latest teacher feedback:
 The more algorithms this idea can be applied to, the better. Ideally, learned pressure-based priority should be shown to work across multiple classes of MAPF algorithms, not only algorithms very close to PIBT.
 ```
 
+Latest mixed-map / narrow-passage feedback:
+
+```text
+Narrow-channel congestion evacuation is not a stable or sufficiently strong
+main selling point by itself. Keep the GitHub record current and avoid framing
+the room result as proving broad map generalization.
+```
+
 Implication:
 
 ```text
 The cross-planner section should be treated as a core contribution about transferability and algorithmic breadth, not merely a small supplementary validation.
+Mixed-map room recovery can be used as diagnostic evidence for training
+distribution mismatch, but the paper should still center the broader
+execution-level priority story and acknowledge warehouse / maze_like boundary
+behavior.
 ```
 
 ## Current Evidence Chain
@@ -211,6 +223,12 @@ Prefer throughput, collisions, wait/no-progress/stuck ratios, success ratios, no
   vanilla Greedy, so it is another throughput boundary case rather than a main
   positive result. The mixed-map conclusion should emphasize strong recovery on
   room and limited headroom on warehouse / maze_like.
+- Teacher-facing caution after mixed-map results: do not sell the work as
+  "narrow-channel evacuation is solved" or "all OOD map types improve." The
+  safer claim is that learned execution-level priority can help rule-based
+  planners when the main failure is local right-of-way ordering, while maps or
+  planners with already-strong built-in congestion handling may show little
+  throughput gain or slight regression.
 
 ## Current Planner Parameters
 

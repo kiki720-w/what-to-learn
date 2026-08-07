@@ -278,6 +278,17 @@ Use this as a boundary / diagnostic result for the current Python PIBT implement
 
 ## Cross-Map Results
 
+Current cross-map interpretation:
+
+```text
+The mixed-map checkpoint should not be presented as a universal OOD map
+generalization fix. It strongly recovers the room bottleneck case, but
+warehouse and maze_like remain throughput boundary cases where vanilla Greedy is
+already strong. Following teacher feedback, narrow-channel congestion evacuation
+should be treated as diagnostic evidence about when learned priority helps, not
+as the main standalone contribution.
+```
+
 ### Warehouse
 
 | Method | Throughput | Wait ratio | No-progress ratio | Stuck ratio |

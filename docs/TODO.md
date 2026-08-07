@@ -45,6 +45,7 @@ For rule-based lifelong MAPF planners, learning execution-level priority is the 
    - Done: first mixed-checkpoint Greedy Priority check on warehouse / 24 agents / 500 steps / seeds [1,2,3,4,5]. Throughput is still lower than vanilla (`1.0264 -> 1.0112`, -1.48%), while wait / no-progress / stuck ratios improve slightly. Treat warehouse as a boundary case rather than evidence that mixed training fixes all OOD maps.
    - Done: mixed-checkpoint Greedy Priority check on room / 24 agents / 500 steps / seeds [1,2,3,4,5]. Throughput improves strongly (`0.1112 -> 0.8736`, +685.61%), with wait / no-progress / stuck ratios sharply reduced and zero collisions. This supports the training-distribution mismatch explanation for room maps.
    - Done: mixed-checkpoint Greedy Priority check on maze_like / 24 agents / 500 steps / seeds [1,2,3,4,5]. Throughput is slightly lower than vanilla (`1.0560 -> 1.0456`, -0.98%); no-progress and stuck ratios improve slightly, but wait ratio increases slightly. Treat maze_like as a boundary case with little throughput headroom.
+   - Teacher feedback: narrow-channel congestion evacuation should not be used as the main selling point by itself because the effect is not stable across map families. Use the room result as diagnostic evidence for training distribution mismatch, and keep the main story on execution-level priority across rule-based planners.
    - Next: if time permits, run the original random-obstacle-only checkpoint on the same room / maze_like / warehouse commands to directly quantify checkpoint-vs-checkpoint transfer. The current paired vanilla-vs-mixed results already show room recovery and warehouse / maze_like boundary behavior.
    - Run Greedy Priority Planner on more maps or densities.
    - Run PP / WHCA*-style planner on more maps or densities.
@@ -118,6 +119,7 @@ For rule-based lifelong MAPF planners, learning execution-level priority is the 
 ## Important Cautions
 
 - Do not claim warehouse improves throughput; it is a boundary case where vanilla is already strong.
+- Do not claim narrow-channel / bottleneck evacuation is solved in general. The room result is strong, but warehouse and maze_like do not show throughput gains with the mixed checkpoint.
 - Do not mix PIBT and Greedy results in the same table row.
 - Do not claim runtime efficiency unless the measurement protocol is verified.
 - Do not claim runtime inefficiency from current wall-clock logs either; they may be affected by foreground workloads such as games.
