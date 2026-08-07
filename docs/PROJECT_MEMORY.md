@@ -201,6 +201,16 @@ Prefer throughput, collisions, wait/no-progress/stuck ratios, success ratios, no
   Interpretation: room strongly supports the training-distribution mismatch
   explanation and shows that learned execution-level priority can optimize a
   rule-based planner on bottleneck maps once those layouts appear in training.
+- Mixed-checkpoint OOD runtime check on `maze_like` with
+  `lifelong_neural_greedy_priority.py`, 24 agents, 500 steps, seeds 1-5:
+  Vanilla Greedy throughput `1.0560 +/- 0.0207`; mixed-checkpoint Neural
+  Greedy throughput `1.0456 +/- 0.0158` (-0.98%). Collisions stayed zero.
+  No-progress and stuck ratios improved slightly (`0.0167 -> 0.0158`,
+  `0.0017 -> 0.0014`), but wait ratio increased slightly (`0.0074 -> 0.0082`).
+  Interpretation: this maze_like generator is not a hard bottleneck case for
+  vanilla Greedy, so it is another throughput boundary case rather than a main
+  positive result. The mixed-map conclusion should emphasize strong recovery on
+  room and limited headroom on warehouse / maze_like.
 
 ## Current Planner Parameters
 

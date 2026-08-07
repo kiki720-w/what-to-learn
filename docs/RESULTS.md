@@ -352,6 +352,34 @@ was due to training-test distribution mismatch, not a failure of the priority
 injection idea itself.
 ```
 
+### Maze-Like
+
+Mixed-map checkpoint Greedy Priority Planner check:
+
+```text
+Script: lifelong_neural_greedy_priority.py
+Checkpoint: checkpoints_mixed/best_model_multi.pth
+Map: maze_like
+Agents: 24
+Steps: 500
+Seeds: 1,2,3,4,5
+```
+
+| Method | Throughput | Wait ratio | No-progress ratio | Stuck ratio | Collisions |
+|---|---:|---:|---:|---:|---:|
+| Vanilla Greedy | 1.0560 +/- 0.0207 | 0.0074 +/- 0.0008 | 0.0167 +/- 0.0019 | 0.0017 +/- 0.0006 | 0.00 +/- 0.00 |
+| Mixed-checkpoint Neural Greedy | 1.0456 +/- 0.0158 | 0.0082 +/- 0.0020 | 0.0158 +/- 0.0034 | 0.0014 +/- 0.0012 | 0.00 +/- 0.00 |
+
+Interpretation:
+
+```text
+The mixed-map checkpoint does not improve maze_like throughput (-0.98%).
+Vanilla Greedy is already strong on this particular maze_like generator, with
+very low wait and stuck ratios, so there is little throughput headroom. Neural
+slightly reduces no-progress and stuck ratios but slightly increases wait ratio.
+Treat maze_like as another boundary case rather than a main positive result.
+```
+
 ### Corridor, 24 Agents
 
 Source:

@@ -44,7 +44,8 @@ For rule-based lifelong MAPF planners, learning execution-level priority is the 
    - Done: trained `checkpoints_mixed/best_model_multi.pth` from `dataset_v2_mixed`; early stopping triggered at epoch 13, with best validation loss `0.2231` and best validation accuracy `0.9394`.
    - Done: first mixed-checkpoint Greedy Priority check on warehouse / 24 agents / 500 steps / seeds [1,2,3,4,5]. Throughput is still lower than vanilla (`1.0264 -> 1.0112`, -1.48%), while wait / no-progress / stuck ratios improve slightly. Treat warehouse as a boundary case rather than evidence that mixed training fixes all OOD maps.
    - Done: mixed-checkpoint Greedy Priority check on room / 24 agents / 500 steps / seeds [1,2,3,4,5]. Throughput improves strongly (`0.1112 -> 0.8736`, +685.61%), with wait / no-progress / stuck ratios sharply reduced and zero collisions. This supports the training-distribution mismatch explanation for room maps.
-   - Next: run the mixed-checkpoint Greedy Priority check on maze_like, then compare the original random-obstacle-only checkpoint against the mixed-map checkpoint where needed.
+   - Done: mixed-checkpoint Greedy Priority check on maze_like / 24 agents / 500 steps / seeds [1,2,3,4,5]. Throughput is slightly lower than vanilla (`1.0560 -> 1.0456`, -0.98%); no-progress and stuck ratios improve slightly, but wait ratio increases slightly. Treat maze_like as a boundary case with little throughput headroom.
+   - Next: if time permits, run the original random-obstacle-only checkpoint on the same room / maze_like / warehouse commands to directly quantify checkpoint-vs-checkpoint transfer. The current paired vanilla-vs-mixed results already show room recovery and warehouse / maze_like boundary behavior.
    - Run Greedy Priority Planner on more maps or densities.
    - Run PP / WHCA*-style planner on more maps or densities.
    - Consider adding another planner family if implementation cost is reasonable.
